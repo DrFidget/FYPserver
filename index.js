@@ -2,16 +2,15 @@ const express = require("express");
 const fs = require("fs");
 const multer = require("multer");
 const { GoogleAuth } = require("google-auth-library");
-const { Storage } = require("@google-cloud/storage");
 const speech = require("@google-cloud/speech");
 const textToSpeech = require("@google-cloud/text-to-speech");
 const { Translate } = require("@google-cloud/translate").v2;
 const cors = require("cors");
-const path = require("path");
 const crypto = require("crypto");
+const path = require("path");
 require("dotenv").config();
 
-const upload = multer({ dest: "audio/" });
+const upload = multer({ storage: multer.memoryStorage() });
 
 const decodeAndInitAuth = async () => {
   const encodedFilePath = path.join(__dirname, "./keys/encodedfile.txt");
@@ -76,9 +75,7 @@ const createApp = (authClient) => {
         return res.status(400).json({ error: "No file uploaded." });
       }
 
-      const audioFilePath = req.file.path;
-      const file = fs.readFileSync(audioFilePath);
-      const audioBytes = file.toString("base64");
+      const audioBytes = req.file.buffer.toString("base64");
       const languageCode = req.body.languageCode || "en-US";
 
       const audio = { content: audioBytes };
@@ -94,8 +91,6 @@ const createApp = (authClient) => {
       const transcription = response.results
         .map((result) => result.alternatives[0].transcript)
         .join("\n");
-
-      fs.unlinkSync(audioFilePath);
 
       res.json({ transcription });
     } catch (error) {
