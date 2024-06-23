@@ -13,22 +13,24 @@ require("dotenv").config();
 
 const upload = multer({ dest: "audio/" });
 
-const decode = async () => {
+const decodeAndInitAuth = async () => {
   const encodedFilePath = path.join(__dirname, "./keys/encodedfile.txt");
   const encryptedContent = fs.readFileSync(encodedFilePath, "utf8");
   const decipher = crypto.createDecipher("aes-256-cbc", process.env.SECRET_KEY);
   let decrypted = decipher.update(encryptedContent, "base64", "utf8");
   decrypted += decipher.final("utf8");
 
-  const decodedPemFilePath = path.join(__dirname, "./tmp/decodedkey.pem");
-  fs.writeFileSync(decodedPemFilePath, decrypted);
-
-  console.log("Base64 decoded and file saved as .pem.");
+  return new GoogleAuth({
+    credentials: {
+      client_email: "useapis@chitchat-425ea.iam.gserviceaccount.com",
+      private_key: decrypted,
+    },
+    scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+  });
 };
 
-let auth;
-
 const getAuthClient = async () => {
+  const auth = await decodeAndInitAuth();
   return await auth.getClient();
 };
 
@@ -47,7 +49,7 @@ const getTranslateClient = async () => {
   return new Translate({ authClient });
 };
 
-const createApp = () => {
+const createApp = (authClient) => {
   const app = express();
 
   app.use(cors());
@@ -152,18 +154,9 @@ const createApp = () => {
 };
 
 const main = async () => {
-  await decode(); // Ensure decode is finished before proceeding
+  const authClient = await getAuthClient();
 
-  // Initialize auth after decoding
-  auth = new GoogleAuth({
-    credentials: {
-      client_email: "useapis@chitchat-425ea.iam.gserviceaccount.com",
-      private_key: fs.readFileSync("./tmp/decodedkey.pem", "utf8"),
-    },
-    scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-  });
-
-  const app = createApp();
+  const app = createApp(authClient);
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
