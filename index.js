@@ -1,7 +1,6 @@
 const express = require("express");
 const fs = require("fs");
 const multer = require("multer");
-const axios = require("axios");
 const { GoogleAuth } = require("google-auth-library");
 const speech = require("@google-cloud/speech");
 const textToSpeech = require("@google-cloud/text-to-speech");
@@ -10,6 +9,8 @@ const cors = require("cors");
 const crypto = require("crypto");
 const path = require("path");
 require("dotenv").config();
+
+const { firebase_db, uploadFile, downloadFile } = require("./firebase");
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -146,39 +147,44 @@ const createApp = (authClient) => {
     }
   });
 
-  app.post("/transcribeFromUrl", async (req, res) => {
+  // File upload endpoint
+  app.post("/storage/file", upload.single("file"), async (req, res) => {
     try {
-      const { audioUrl, languageCode } = req.body;
-
-      if (!audioUrl) {
-        return res.status(400).json({ error: "No audio URL provided." });
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded." });
       }
 
-      const response = await axios.get(audioUrl, {
-        responseType: "arraybuffer",
-      });
+      const fileName = req.file.originalname;
+      const fileBuffer = req.file.buffer;
+      const fileUrl = await uploadFile(fileName, fileBuffer);
 
-      const audioBytes = Buffer.from(response.data).toString("base64");
-      const audio = { content: audioBytes };
-      const config = {
-        encoding: "MP3",
-        sampleRateHertz: 16000,
-        languageCode: languageCode || "en-US",
-      };
-      const request = { audio: audio, config: config };
-
-      const speechClient = await getSpeechClient();
-      const [transcriptionResponse] = await speechClient.recognize(request);
-      const transcription = transcriptionResponse.results
-        .map((result) => result.alternatives[0].transcript)
-        .join("\n");
-
-      res.json({ transcription });
+      res.json({ fileUrl });
     } catch (error) {
       console.error("ERROR:", error);
-      res
-        .status(500)
-        .json({ error: "An error occurred during transcription from URL." });
+      res.status(500).json({ error: "An error occurred while uploading." });
+    }
+  });
+
+  // File download endpoint
+  app.get("/storage/file/:fileName", async (req, res) => {
+    try {
+      const { fileName } = req.params;
+      const downloadPath = await downloadFile(fileName);
+
+      res.download(downloadPath, (err) => {
+        if (err) {
+          console.error("ERROR:", err);
+          res
+            .status(500)
+            .json({ error: "An error occurred while downloading." });
+        } else {
+          console.log(`File ${fileName} downloaded successfully.`);
+          fs.unlinkSync(downloadPath); // Delete the file after download
+        }
+      });
+    } catch (error) {
+      console.error("ERROR:", error);
+      res.status(500).json({ error: "An error occurred while downloading." });
     }
   });
 

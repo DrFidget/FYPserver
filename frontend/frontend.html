@@ -1,165 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Cloud APIs Demo</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        textarea,
-        audio,
-        input[type="file"],
-        input[type="text"],
-        select {
-            width: 100%;
-            margin-bottom: 10px;
-        }
-
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Tester</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .container {
+      margin-top: 50px;
+    }
+  </style>
 </head>
-
 <body>
-    <h1>Google Cloud APIs Demo</h1>
+  <div class="container">
+    <h1>API Tester</h1>
 
-    <h2>Speech-to-Text</h2>
-    <input type="file" id="audioFile" accept="audio/*"><br>
-    <button onclick="transcribeAudio()">Transcribe Audio</button>
-    <br>
-    <textarea id="transcriptionResult" rows="6" placeholder="Transcription will appear here" readonly></textarea>
+    <!-- Transcribe API -->
+    <h2>Transcribe Audio</h2>
+    <form id="transcribeForm">
+      <div class="mb-3">
+        <label for="audioFile" class="form-label">Choose an audio file:</label>
+        <input type="file" class="form-control" id="audioFile" name="audio" accept="audio/*" required>
+      </div>
+      <div class="mb-3">
+        <label for="languageCode" class="form-label">Language Code:</label>
+        <input type="text" class="form-control" id="languageCode" name="languageCode" value="en-US">
+      </div>
+      <button type="submit" class="btn btn-primary">Transcribe</button>
+    </form>
+    <div id="transcriptionResult" class="mt-3"></div>
 
-    <h2>Text-to-Speech</h2>
-    <textarea id="textInput" rows="4" placeholder="Enter text to synthesize"></textarea><br>
-    <select id="languageCode">
-        <option value="en-US">English (US)</option>
-        <option value="ur-PK">Urdu (Pakistan)</option>
-    </select><br>
-    <button onclick="synthesizeSpeech()">Synthesize Speech</button>
-    <br>
-    <audio id="audioPlayer" controls>
-        Your browser does not support the audio element.
-    </audio>
+    <!-- Synthesize API -->
+    <h2>Synthesize Text to Speech</h2>
+    <form id="synthesizeForm">
+      <div class="mb-3">
+        <label for="synthesizeText" class="form-label">Text to Synthesize:</label>
+        <textarea class="form-control" id="synthesizeText" name="text" rows="3" required></textarea>
+      </div>
+      <div class="mb-3">
+        <label for="synthesizeLanguageCode" class="form-label">Language Code:</label>
+        <input type="text" class="form-control" id="synthesizeLanguageCode" name="languageCode" value="en-US">
+      </div>
+      <button type="submit" class="btn btn-primary">Synthesize</button>
+    </form>
+    <audio id="audioPlayer" controls class="mt-3"></audio>
 
-    <h2>Translation</h2>
-    <textarea id="translationInput" rows="4" placeholder="Enter text to translate"></textarea><br>
-    <select id="sourceLanguage">
-        <option value="en">English</option>
-        <option value="ur">Urdu</option>
-    </select>
-    <select id="targetLanguage">
-        <option value="en">English</option>
-        <option value="ur">Urdu</option>
-    </select><br>
-    <button onclick="translateText()">Translate Text</button>
-    <br>
-    <textarea id="translationResult" rows="4" placeholder="Translation will appear here" readonly></textarea>
+    <!-- Translate API -->
+    <h2>Translate Text</h2>
+    <form id="translateForm">
+      <div class="mb-3">
+        <label for="translateText" class="form-label">Text to Translate:</label>
+        <textarea class="form-control" id="translateText" name="text" rows="3" required></textarea>
+      </div>
+      <div class="mb-3">
+        <label for="sourceLanguage" class="form-label">Source Language:</label>
+        <input type="text" class="form-control" id="sourceLanguage" name="sourceLanguage" value="en">
+      </div>
+      <div class="mb-3">
+        <label for="targetLanguage" class="form-label">Target Language:</label>
+        <input type="text" class="form-control" id="targetLanguage" name="targetLanguage" value="es">
+      </div>
+      <button type="submit" class="btn btn-primary">Translate</button>
+    </form>
+    <div id="translationResult" class="mt-3"></div>
 
-    <h2>Transcribe from URL</h2>
-    <input type="text" id="audioUrl" placeholder="Enter audio URL"><br>
-    <button onclick="transcribeFromUrl()">Transcribe from URL</button>
-    <br>
-    <textarea id="urlTranscriptionResult" rows="6" placeholder="Transcription from URL will appear here" readonly></textarea>
+    <!-- File Upload -->
+    <h2>Upload File</h2>
+    <form id="uploadForm">
+      <div class="mb-3">
+        <label for="file" class="form-label">Choose a file:</label>
+        <input type="file" class="form-control" id="file" name="file" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Upload</button>
+    </form>
+    <div id="uploadResult" class="mt-3"></div>
 
-    <script>
-        async function transcribeAudio() {
-            const audioFile = document.getElementById('audioFile').files[0];
-            if (!audioFile) {
-                alert('Please select an audio file.');
-                return;
-            }
+    <!-- File Download -->
+    <h2>Download File</h2>
+    <form id="downloadForm">
+      <div class="mb-3">
+        <label for="fileName" class="form-label">Enter file name:</label>
+        <input type="text" class="form-control" id="fileName" name="fileName" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Download</button>
+    </form>
+    <a id="downloadLink" href="#" class="mt-3 d-none">Download File</a>
+  </div>
 
-            const formData = new FormData();
-            formData.append('audio', audioFile);
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Custom JavaScript -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+  const baseURL = "http://localhost:3000"; // Replace with your server URL
 
-            try {
-                const response = await fetch('http://localhost:3000/transcribe', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
-                document.getElementById('transcriptionResult').value = data.transcription;
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error transcribing audio.');
-            }
-        }
+  // Transcribe form submission
+  document.getElementById("transcribeForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    try {
+      const response = await fetch(`${baseURL}/transcribe`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      document.getElementById("transcriptionResult").textContent = data.transcription;
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred during transcription.");
+    }
+  });
 
-        async function synthesizeSpeech() {
-            const text = document.getElementById('textInput').value;
-            const languageCode = document.getElementById('languageCode').value;
+  // Synthesize form submission
+  document.getElementById("synthesizeForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    try {
+      const response = await fetch(`${baseURL}/synthesize`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(Object.fromEntries(formData)),
+      });
+      const blob = await response.blob();
+      const audioPlayer = document.getElementById("audioPlayer");
+      audioPlayer.src = URL.createObjectURL(blob);
+      audioPlayer.play();
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred during text-to-speech synthesis.");
+    }
+  });
 
-            try {
-                const response = await fetch('http://localhost:3000/synthesize', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ text, languageCode })
-                });
-                const audioBlob = await response.blob();
-                const audioUrl = URL.createObjectURL(audioBlob);
-                document.getElementById('audioPlayer').src = audioUrl;
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error synthesizing speech.');
-            }
-        }
+  // Translate form submission
+  document.getElementById("translateForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    try {
+      const response = await fetch(`${baseURL}/translate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(Object.fromEntries(formData)),
+      });
+      const data = await response.json();
+      document.getElementById("translationResult").textContent = data.translation;
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred during translation.");
+    }
+  });
 
-        async function translateText() {
-            const text = document.getElementById('translationInput').value;
-            const sourceLanguage = document.getElementById('sourceLanguage').value;
-            const targetLanguage = document.getElementById('targetLanguage').value;
+  // Upload form submission
+  document.getElementById("uploadForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    try {
+      const response = await fetch(`${baseURL}/storage/file`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      document.getElementById("uploadResult").textContent = `File uploaded successfully. URL: ${data.fileUrl}`;
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred during file upload.");
+    }
+  });
 
-            try {
-                const response = await fetch('http://localhost:3000/translate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ text, sourceLanguage, targetLanguage })
-                });
-                const data = await response.json();
-                document.getElementById('translationResult').value = data.translation;
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error translating text.');
-            }
-        }
+  // Download form submission
+  document.getElementById("downloadForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const fileName = document.getElementById("fileName").value.trim();
+    if (!fileName) {
+      alert("Please enter a file name.");
+      return;
+    }
+    try {
+      const response = await fetch(`${baseURL}/storage/file/${fileName}`);
+      if (!response.ok) {
+        throw new Error(`File ${fileName} not found.`);
+      }
+      const blob = await response.blob();
+      const downloadLink = document.getElementById("downloadLink");
+      downloadLink.href = URL.createObjectURL(blob);
+      downloadLink.download = fileName;
+      downloadLink.classList.remove("d-none");
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred during file download.");
+    }
+  });
+});
 
-        async function transcribeFromUrl() {
-            const audioUrl = document.getElementById('audioUrl').value;
-            const languageCode = 'en-US'; // Default language code, you can add a dropdown for selecting language if needed
-
-            if (!audioUrl) {
-                alert('Please enter an audio URL.');
-                return;
-            }
-
-            try {
-                const response = await fetch('http://localhost:3000/transcribeFromUrl', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ audioUrl, languageCode })
-                });
-                const data = await response.json();
-                document.getElementById('urlTranscriptionResult').value = data.transcription;
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error transcribing audio from URL.');
-            }
-        }
-    </script>
+  </script>
 </body>
-
 </html>

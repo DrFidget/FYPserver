@@ -24,6 +24,8 @@
     "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "firebase": "^10.12.2",
+    "firebase-admin": "^12.2.0",
     "fs": "^0.0.1-security",
     "google-auth-library": "^9.11.0",
     "grpc-tools": "^1.12.4",
