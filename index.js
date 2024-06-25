@@ -1,6 +1,7 @@
 const express = require("express");
 const fs = require("fs");
 const multer = require("multer");
+const axios = require("axios");
 const { GoogleAuth } = require("google-auth-library");
 const speech = require("@google-cloud/speech");
 const textToSpeech = require("@google-cloud/text-to-speech");
@@ -142,6 +143,42 @@ const createApp = (authClient) => {
     } catch (error) {
       console.error("ERROR:", error);
       res.status(500).json({ error: "An error occurred during translation." });
+    }
+  });
+
+  app.post("/transcribeFromUrl", async (req, res) => {
+    try {
+      const { audioUrl, languageCode } = req.body;
+
+      if (!audioUrl) {
+        return res.status(400).json({ error: "No audio URL provided." });
+      }
+
+      const response = await axios.get(audioUrl, {
+        responseType: "arraybuffer",
+      });
+
+      const audioBytes = Buffer.from(response.data).toString("base64");
+      const audio = { content: audioBytes };
+      const config = {
+        encoding: "MP3",
+        sampleRateHertz: 16000,
+        languageCode: languageCode || "en-US",
+      };
+      const request = { audio: audio, config: config };
+
+      const speechClient = await getSpeechClient();
+      const [transcriptionResponse] = await speechClient.recognize(request);
+      const transcription = transcriptionResponse.results
+        .map((result) => result.alternatives[0].transcript)
+        .join("\n");
+
+      res.json({ transcription });
+    } catch (error) {
+      console.error("ERROR:", error);
+      res
+        .status(500)
+        .json({ error: "An error occurred during transcription from URL." });
     }
   });
 

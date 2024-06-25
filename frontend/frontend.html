@@ -12,7 +12,10 @@
         }
 
         textarea,
-        audio {
+        audio,
+        input[type="file"],
+        input[type="text"],
+        select {
             width: 100%;
             margin-bottom: 10px;
         }
@@ -59,6 +62,12 @@
     <button onclick="translateText()">Translate Text</button>
     <br>
     <textarea id="translationResult" rows="4" placeholder="Translation will appear here" readonly></textarea>
+
+    <h2>Transcribe from URL</h2>
+    <input type="text" id="audioUrl" placeholder="Enter audio URL"><br>
+    <button onclick="transcribeFromUrl()">Transcribe from URL</button>
+    <br>
+    <textarea id="urlTranscriptionResult" rows="6" placeholder="Transcription from URL will appear here" readonly></textarea>
 
     <script>
         async function transcribeAudio() {
@@ -123,6 +132,31 @@
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error translating text.');
+            }
+        }
+
+        async function transcribeFromUrl() {
+            const audioUrl = document.getElementById('audioUrl').value;
+            const languageCode = 'en-US'; // Default language code, you can add a dropdown for selecting language if needed
+
+            if (!audioUrl) {
+                alert('Please enter an audio URL.');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/transcribeFromUrl', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ audioUrl, languageCode })
+                });
+                const data = await response.json();
+                document.getElementById('urlTranscriptionResult').value = data.transcription;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error transcribing audio from URL.');
             }
         }
     </script>
