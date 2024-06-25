@@ -10,7 +10,7 @@ const crypto = require("crypto");
 const path = require("path");
 require("dotenv").config();
 
-const { firebase_db, uploadFile, downloadFile } = require("./firebase");
+const { uploadFile } = require("./firebase");
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -162,29 +162,6 @@ const createApp = (authClient) => {
     } catch (error) {
       console.error("ERROR:", error);
       res.status(500).json({ error: "An error occurred while uploading." });
-    }
-  });
-
-  // File download endpoint
-  app.get("/storage/file/:fileName", async (req, res) => {
-    try {
-      const { fileName } = req.params;
-      const downloadPath = await downloadFile(fileName);
-
-      res.download(downloadPath, (err) => {
-        if (err) {
-          console.error("ERROR:", err);
-          res
-            .status(500)
-            .json({ error: "An error occurred while downloading." });
-        } else {
-          console.log(`File ${fileName} downloaded successfully.`);
-          fs.unlinkSync(downloadPath); // Delete the file after download
-        }
-      });
-    } catch (error) {
-      console.error("ERROR:", error);
-      res.status(500).json({ error: "An error occurred while downloading." });
     }
   });
 
