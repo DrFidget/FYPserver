@@ -33,6 +33,6 @@ const uploadFile = async (fileName, fileBuffer) => {
 
   await file.save(fileBuffer);
   console.log(`File ${filePath} uploaded successfully.`);
-  return `gs://${firebase_bucket.name}/${filePath}`;
+  return filePath;
 };
 module.exports = { firebase_db, firebase_bucket, uploadFile };

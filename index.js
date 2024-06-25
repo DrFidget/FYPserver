@@ -8,6 +8,7 @@ const { Translate } = require("@google-cloud/translate").v2;
 const cors = require("cors");
 const crypto = require("crypto");
 const path = require("path");
+const axios = require("axios");
 require("dotenv").config();
 
 const { uploadFile } = require("./firebase");
@@ -164,7 +165,41 @@ const createApp = (authClient) => {
       res.status(500).json({ error: "An error occurred while uploading." });
     }
   });
+  app.post("/transcribeFromUrl", async (req, res) => {
+    try {
+      const { audioUrl, languageCode } = req.body;
 
+      if (!audioUrl) {
+        return res.status(400).json({ error: "No audio URL provided." });
+      }
+
+      const response = await axios.get(audioUrl, {
+        responseType: "arraybuffer",
+      });
+
+      const audioBytes = Buffer.from(response.data).toString("base64");
+      const audio = { content: audioBytes };
+      const config = {
+        encoding: "MP3",
+        sampleRateHertz: 16000,
+        languageCode: languageCode || "en-US",
+      };
+      const request = { audio: audio, config: config };
+
+      const speechClient = await getSpeechClient();
+      const [transcriptionResponse] = await speechClient.recognize(request);
+      const transcription = transcriptionResponse.results
+        .map((result) => result.alternatives[0].transcript)
+        .join("\n");
+
+      res.json({ transcription });
+    } catch (error) {
+      console.error("ERROR:", error);
+      res
+        .status(500)
+        .json({ error: "An error occurred during transcription from URL." });
+    }
+  });
   return app;
 };
 
