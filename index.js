@@ -126,9 +126,14 @@ const createApp = (authClient) => {
         metadata: { contentType: "audio/mpeg" },
       });
 
+      const signedUrlResponse = await file.getSignedUrl({
+        action: "read",
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+      });
+      const fileUrl = signedUrlResponse[0];
       res.json({
         message: "Audio synthesized and uploaded successfully.",
-        filePath,
+        fileUrl,
       });
     } catch (error) {
       console.error("ERROR:", error);
