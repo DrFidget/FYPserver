@@ -11,7 +11,7 @@ const path = require("path");
 const axios = require("axios");
 require("dotenv").config();
 
-const { uploadFile } = require("./firebase");
+const { uploadFile, firebase_bucket } = require("./firebase");
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -117,8 +117,19 @@ const createApp = (authClient) => {
       const textToSpeechClient = await getTextToSpeechClient();
       const [response] = await textToSpeechClient.synthesizeSpeech(request);
 
-      res.set("Content-Type", "audio/mp3");
-      res.send(response.audioContent);
+      const fileName = `synthesized_audio_${Date.now()}.mp3`;
+      const folderName = "APIstorage";
+      const filePath = `${folderName}/${fileName}`;
+      const file = firebase_bucket.file(filePath);
+
+      await file.save(response.audioContent, {
+        metadata: { contentType: "audio/mpeg" },
+      });
+
+      res.json({
+        message: "Audio synthesized and uploaded successfully.",
+        filePath,
+      });
     } catch (error) {
       console.error("ERROR:", error);
       res
@@ -148,23 +159,6 @@ const createApp = (authClient) => {
     }
   });
 
-  // File upload endpoint
-  app.post("/storage/file", upload.single("file"), async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ error: "No file uploaded." });
-      }
-
-      const fileName = req.file.originalname;
-      const fileBuffer = req.file.buffer;
-      const fileUrl = await uploadFile(fileName, fileBuffer);
-
-      res.json({ fileUrl });
-    } catch (error) {
-      console.error("ERROR:", error);
-      res.status(500).json({ error: "An error occurred while uploading." });
-    }
-  });
   app.post("/transcribeFromUrl", async (req, res) => {
     try {
       const { audioUrl, languageCode } = req.body;
